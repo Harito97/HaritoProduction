@@ -6,3 +6,5 @@ frontend/node_modules
 *.pt
 *.pth
 *.onnx
+
+*.pyc
