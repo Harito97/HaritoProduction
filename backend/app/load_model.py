@@ -19,10 +19,10 @@ from backend.app.models.H97 import H97_EfficientNet
 
 def load_model1():
     model = YOLO(
-        # "/Data/Projects/HaritoProduction/backend/app/models/yolo_cell_cluster_detection_300epochs.onnx"
-        "/Data/Projects/HaritoProduction/backend/app/models/best.pt",
+        "/Data/Projects/HaritoProduction/backend/app/models/cell_cluster_detect_300_epoches_best.onnx",
+        # "/Data/Projects/HaritoProduction/backend/app/models/cell_cluster_detect_300_epoches_best.pt",
     )
-    model.eval()
+    # model.eval() # Hien tai dong nay dang lam viec load vao bi loi va minh khong hieu tai sao
     return model
 
 

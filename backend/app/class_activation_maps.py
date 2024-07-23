@@ -32,7 +32,6 @@ class ClassActivationMaps:
         return np.array(result)
 
 
-
     def __np_images_to_tensor_images(self, np_images):
         tensor_images = torch.from_numpy(np_images)
         # Chuyển đổi thứ tự các trục từ (H, W, C) về (C, H, W)
