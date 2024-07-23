@@ -1,0 +1,8 @@
+frontend/node_modules
+
+*.jpg
+*.jpeg
+
+*.pt
+*.pth
+*.onnx
