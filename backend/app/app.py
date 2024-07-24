@@ -9,9 +9,9 @@ import numpy as np
 
 
 class App:
-    def __init__(self):
-        self.model1 = load_model1()
-        self.model2 = load_model2()
+    def __init__(self, model1_path=None, model2_path=None):
+        self.model1 = load_model1(model1_path)
+        self.model2 = load_model2(model2_path)
         target_layers = self.model2.feature_extractor[-2]
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.cam = ClassActivationMaps(self.model2, target_layers)
@@ -25,6 +25,12 @@ class App:
         self.yolo_detect_image = None
         self.bounding_boxes = None
         self.cam_images = None
+
+    def get_prediction(self):
+        tensor1 = self.cam.cam.outputs
+        tensor2 = self.result_cam_origin_image
+        tensor_combined = torch.cat((tensor1, tensor2), dim=0)
+        return tensor_combined.flatten()
 
     def run(self, image_origin_dir):
         self.image_origin_dir = image_origin_dir

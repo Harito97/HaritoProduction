@@ -1,90 +1,51 @@
 import torch
 import torch.nn as nn
-import torchvision.models as models
 import torch.nn.functional as F
+import torchvision.models as models
+import numpy as np
+import matplotlib.pyplot as plt
 
 # from torchsummary import summary
+# Trực quan hóa kiến trúc mô hình
+# summary(model, (3, 224, 224))  # Input shape (3 channels, 224x224 image)
 
 
 class H97_ANN(nn.Module):
     def __init__(self):
         # Use this for data version 3
         super(H97_ANN, self).__init__()
-        self.fc1 = nn.Linear(150528, 9)  # (3 * 224 * 224, 9)
-        self.fc2 = nn.Linear(9, 7)
-        self.fc3 = nn.Linear(7, 3)
-        self.dropout1 = nn.Dropout(0.5)
+        self.fc1 = nn.Linear(12*3+5*3+1*3, 97)
+        self.fc2 = nn.Linear(97, 3)
+        self.dropout = nn.Dropout(0.3)
+        # Khởi tạo trọng số tùy chỉnh cho fc1
+        self._init_weights()
 
+    def _init_weights(self):
+        with torch.no_grad():
+            # Trọng số liên quan đến các chiều 1 đến 36 và 54
+            self.fc1.weight[:, :36].uniform_(-0.3, 0.3)  # Giá trị nhỏ hơn
+            self.fc1.weight[:, 51:].uniform_(-0.15, 0.15)   # Giá trị nhỏ hơn
+
+            # Trọng số liên quan đến các chiều 37 đến 53
+            self.fc1.weight[:, 36:50].uniform_(-1, 1)  # Giá trị lớn hơn
+        
     def forward(self, x):
-        # Flatten the input tensor
-        x = x.view(-1, 150528)  # (-1, 3 * 224 * 224)
-        x = self.dropout1(x)
+        # x size is [batch_size, 12*3+5*3+1*3]
         x = self.fc1(x)
-        x = self.dropout1(x)
+        x = self.dropout(x)
         x = F.relu(x)
         x = self.fc2(x)
-        x = self.dropout1(x)
-        x = F.relu(x)
-        x = self.fc3(x)
         x = F.softmax(x, dim=1)  # Softmax applied along the class dimension
         return x
 
-
-class H97_ResNet(nn.Module):
-    def __init__(self, num_classes: int = 3, retrainResNet: bool = False):
-        super(H97_ResNet, self).__init__()
-        # Tải mô hình ResNet50 đã được huấn luyện trước
-        resnet50 = models.resnet50(pretrained=True)
-        # Loại bỏ lớp fully connected cuối cùng
-        self.feature_extractor = nn.Sequential(*list(resnet50.children())[:-1])
-        if not retrainResNet:
-            # Đóng băng các tham số trong feature extractor để không cập nhật trong quá trình huấn luyện
-            for param in self.feature_extractor.parameters():
-                param.requires_grad = False
-
-        # Kích thước đầu vào cho lớp fully connected đầu tiên dựa trên output của ResNet50
-        # ResNet50 thường trả về tensor [batch_size, 2048, 1, 1] sau lớp pooling cuối cùng
-        self.fc1 = nn.Linear(2048, 9)
-        self.fc2 = nn.Linear(9, 7)
-        self.fc3 = nn.Linear(7, 3)
-        self.fc4 = nn.Linear(3, num_classes)
-        self.dropout = nn.Dropout(0.1)
-
-    def forward(self, x):
-        # Trích xuất đặc trưng
-        x = self.feature_extractor(x)
-        # Chuyển đổi tensor từ [batch_size, 2048, 1, 1] sang [batch_size, 2048] để phù hợp với lớp fully connected
-        x = torch.flatten(x, 1)
-        # Đưa qua mạng dense
-        x = self.fc1(x)
-        x = nn.ReLU()(x)
-        x = self.dropout(x)
-
-        x = self.fc2(x)
-        x = nn.ReLU()(x)
-        x = self.dropout(x)
-
-        x = self.fc3(x)
-        x = nn.ReLU()(x)
-        x = self.dropout(x)
-
-        x = self.fc4(x)
-        return x
-
-
-# # Khởi tạo mô hình
-# model = H97_ResNet()
-
-# # Trực quan hóa kiến trúc mô hình
-# summary(model, (3, 224, 224))  # Input shape (3 channels, 224x224 image)
-
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torchvision.models as models
-import numpy as np
-import matplotlib.pyplot as plt
+    def fix_batch(self, x, y, criterion, optimizer):
+        self.train()
+        optimizer.zero_grad()
+        output = self(x)
+        loss = criterion(output, y)
+        loss.backward()
+        optimizer.step()
+        return loss, output
 
 
 class H97_EfficientNet(nn.Module):
