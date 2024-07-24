@@ -39,6 +39,8 @@ class H97_ANN(nn.Module):
         return x
 
     def fix_batch(self, x, y, criterion, optimizer):
+        x = torch.tensor(x, dtype=torch.float32).to(device)
+        y = torch.tensor(y, dtype=torch.long).to(device)
         self.train()
         optimizer.zero_grad()
         output = self(x)
