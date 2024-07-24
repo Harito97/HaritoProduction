@@ -100,7 +100,7 @@ class App:
             image = cv2.resize(image, (256, 256)) / 255.0
             images.append(image)
 
-        images.append(cv2.resize(self.origin_image), (256, 256)) / 255.0
+        images.append(cv2.resize(self.origin_image, (256, 256)) / 255.0)
         return np.array(images)
 
     def get_analyst_image1(self):
