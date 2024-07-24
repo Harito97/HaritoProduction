@@ -157,19 +157,27 @@ class ThyroidCancerClassificationModel:
             name=f"final test in {name_dataset} set",
         )
         preds = []
+        probs = []
         true_labels = []
-        for label in [".B2", "B5", "B6"]:
+        for label_index, label in enumerate([".B2", "B5", "B6"]):
             for image in os.listdir(os.path.join(data_dir, label)):
                 image_dir = os.path.join(data_dir, label, image)
                 if print_image_dir_processing:
                     print('Processing:', image_dir)
-                pred = self.forward(image_dir)[0].tolist()
+                pred, prob = self.forward(image_dir)
+                pred = pred.tolist()
+                prob = prob[0].squeeze().tolist()
                 preds += pred
-                true_labels.append(label)
+                probs.append(prob)
+                true_labels.append(label_index)
 
         preds = np.array(preds)
+        probs = np.array(probs)
         true_labels = np.array(true_labels)
 
+        print(preds.shape, probs.shape, true_labels.shape)
+        print(preds, probs, true_labels)
+        
         test_acc = np.mean(preds == true_labels)
         test_f1 = f1_score(
             true_labels, preds, average="weighted"
@@ -189,10 +197,7 @@ class ThyroidCancerClassificationModel:
             "classification_report.png",
         )
         # Save ROC AUC plot
-        y_score = (
-            torch.softmax(test_output, dim=1)
-        )  # Chuyển đổi đầu ra của mô hình thành xác suất
-        Tool.save_roc_auc_plot(true_labels, y_score, 3, "roc_auc.png")
+        Tool.save_roc_auc_plot(true_labels, probs, 3, "roc_auc.png")
 
         wandb.log(
             {

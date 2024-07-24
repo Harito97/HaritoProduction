@@ -73,7 +73,7 @@ class Tool:
         """
         try:
             cr_nodict = classification_report(y_true, y_score, output_dict=False)
-            print("Classification Report:\n", cr)
+            print("Classification Report:\n", cr_nodict)
             cr = classification_report(y_true, y_score, output_dict=True)
             report_df = pd.DataFrame(cr).transpose()
             report_df.drop(
