@@ -140,7 +140,7 @@ class ThyroidCancerClassificationModel:
         _, predicted = torch.max(output_model3, 1)
         return predicted, (output_model3, output_model2, output_model1)
 
-    def test_with_each_part(self, data_dir, name_dataset):
+    def test_with_each_part(self, data_dir, name_dataset, print_image_dir_processing=False):
         import matplotlib.pyplot as plt
         import matplotlib.image as mpimg
         wandb.init(
@@ -153,7 +153,8 @@ class ThyroidCancerClassificationModel:
         for label in [".B2", "B5", "B6"]:
             for image in os.listdir(os.path.join(data_dir, label)):
                 image_dir = os.path.join(data_dir, label, image)
-                print('Processing:', image_dir)
+                if print_image_dir_processing:
+                    print('Processing:', image_dir)
                 pred = self.forward(image_dir)[0].tolist()
                 preds += pred
                 true_labels.append(label)
