@@ -14,7 +14,7 @@ class H97_ANN(nn.Module):
     def __init__(self):
         # Use this for data version 3
         super(H97_ANN, self).__init__()
-        self.fc1 = nn.Linear(12*3+5*3, 97)
+        self.fc1 = nn.Linear(12*3+5*3+1*3, 97)
         self.fc2 = nn.Linear(97, 3)
         self.dropout = nn.Dropout(0.3)
         # Khởi tạo trọng số tùy chỉnh cho fc1
@@ -30,7 +30,7 @@ class H97_ANN(nn.Module):
             self.fc1.weight[:, 36:50].uniform_(-1, 1)  # Giá trị lớn hơn
         
     def forward(self, x):
-        # x size is [batch_size, 12*3+5*3]
+        # x size is [batch_size, 12*3+5*3+1*3]
         x = self.fc1(x)
         x = self.dropout(x)
         x = F.relu(x)
