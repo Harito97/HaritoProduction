@@ -7,6 +7,14 @@ import cv2
 import numpy as np
 import wandb
 import os
+from sklearn.metrics import (
+    confusion_matrix,
+    classification_report,
+    f1_score,
+    roc_curve,
+    auc,
+)
+from sklearn.preprocessing import label_binarize
 
 class ThyroidCancerClassificationModel:
     def __init__(self, model1_path=None, model2_path=None, model3_path=None):
@@ -166,8 +174,6 @@ class ThyroidCancerClassificationModel:
         test_f1 = f1_score(
             true_labels, preds, average="weighted"
         )
-        print(f"Test accuracy: {test_acc}")
-        print(f"Test F1 score: {test_f1}")
 
         # Save confusion matrix
         cm = Tool.save_confusion_matrix(
@@ -228,4 +234,10 @@ class ThyroidCancerClassificationModel:
         axs[2].axis('off')
 
         plt.show()
+        
+        print(f"Test accuracy: {test_acc}")
+        print(f"Test F1 score: {test_f1}")
+        print(f"Classification Report: {cr}")
+        print(f"Confusion Matrix: {cm}")
+
         return test_acc, test_f1, cm, cr, cm_path, cr_path, roc_auc_path
