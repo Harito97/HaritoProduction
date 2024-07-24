@@ -32,11 +32,10 @@ class ThyroidCancerClassificationModel:
 
     def get_images(self, image_origin_dir=None):
         # Đọc ảnh gốc
-        if image_origin_dir is not None:
-            self.image_origin_dir = image_origin_dir
-        self.origin_image = cv2.imread(self.image_origin_dir)
-        if self.origin_image is None:
-            print(f"Error reading image {self.image_origin_dir}")
+        self.image_origin_dir = image_origin_dir
+        self.origin_image = cv2.imread(image_origin_dir)
+        if self.image_origin_dir is None:
+            print(f"Error reading image {image_origin_dir}")
             return
         self.origin_image = cv2.cvtColor(self.origin_image, cv2.COLOR_BGR2RGB)
         self.origin_image = cv2.resize(self.origin_image, (1024, 768))
@@ -87,7 +86,7 @@ class ThyroidCancerClassificationModel:
         images.append(part11)
 
         importance_slice_images, self.bounding_boxes, self.yolo_detect_image = (
-            get_importance_slice_images(self.model1, self.image_origin_dir)
+            get_importance_slice_images(self.model1, image_origin_dir)
         )
         for image in importance_slice_images:
             image = (
@@ -135,8 +134,7 @@ class ThyroidCancerClassificationModel:
         return output_model3
 
     def forward(self, image_origin_dir):
-        self.image_origin_dir = image_origin_dir
-        output_model1 = self.get_output_model1(self.image_origin_dir)
+        output_model1 = self.get_output_model1(image_origin_dir)
         output_model2 = self.get_output_model2(output_model1)
         output_model3 = self.get_output_model3(output_model2)
         _, predicted = torch.max(output_model3, 1)
