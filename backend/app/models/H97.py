@@ -26,7 +26,7 @@ class H97_ANN(nn.Module):
             self.fc1.weight[:, :36].uniform_(-0.3, 0.3)  # Giá trị nhỏ hơn
             self.fc1.weight[:, 51:].uniform_(-0.15, 0.15)   # Giá trị nhỏ hơn
 
-            # Trọng số liên quan đến các chiều 37 đến 53
+            # Trọng số liên quan đến các chiều 37 đến 50
             self.fc1.weight[:, 36:50].uniform_(-1, 1)  # Giá trị lớn hơn
         
     def forward(self, x):

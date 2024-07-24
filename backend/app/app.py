@@ -1,5 +1,5 @@
 from backend.app.load_model import load_model1, load_model2
-from backend.app.class_activation_maps import ClassActivationMaps
+# from backend.app.class_activation_maps import ClassActivationMaps
 
 from backend.utils.image import get_importance_slice_images  # read_images, plot_heatmap
 
