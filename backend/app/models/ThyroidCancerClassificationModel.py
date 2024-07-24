@@ -162,31 +162,31 @@ class ThyroidCancerClassificationModel:
         preds = np.array(preds)
         true_labels = np.array(true_labels)
 
-        test_acc = np.mean(preds.cpu().numpy() == true_labels.cpu().numpy())
+        test_acc = np.mean(preds == true_labels)
         test_f1 = f1_score(
-            true_labels.cpu().numpy(), preds.cpu().numpy(), average="weighted"
+            true_labels, preds, average="weighted"
         )
         print(f"Test accuracy: {test_acc}")
         print(f"Test F1 score: {test_f1}")
 
         # Save confusion matrix
         cm = Tool.save_confusion_matrix(
-            true_labels.cpu().numpy(),
-            preds.cpu().numpy(),
+            true_labels,
+            preds,
             ["B2", "B5", "B6"],
             "confusion_matrix.png",
         )
         # Save classification report
         cr = Tool.save_classification_report(
-            true_labels.cpu().numpy(),
-            preds.cpu().numpy(),
+            true_labels,
+            preds,
             "classification_report.png",
         )
         # Save ROC AUC plot
         y_score = (
-            torch.softmax(test_output, dim=1).cpu().numpy()
+            torch.softmax(test_output, dim=1)
         )  # Chuyển đổi đầu ra của mô hình thành xác suất
-        Tool.save_roc_auc_plot(true_labels.cpu().numpy(), y_score, 3, "roc_auc.png")
+        Tool.save_roc_auc_plot(true_labels, y_score, 3, "roc_auc.png")
 
         wandb.log(
             {
@@ -228,3 +228,4 @@ class ThyroidCancerClassificationModel:
         axs[2].axis('off')
 
         plt.show()
+        return test_acc, test_f1, cm, cr, cm_path, cr_path, roc_auc_path
