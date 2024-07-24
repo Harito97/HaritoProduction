@@ -1,3 +1,4 @@
 torch
 ultralytics
 grad-cam    # co ve thang nay dang khong chay duoc tren gpu
+wandb
