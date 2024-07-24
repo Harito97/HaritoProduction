@@ -152,8 +152,8 @@ class ThyroidCancerClassificationModel:
         preds = []
         true_labels = []
         for label in [".B2", "B5", "B6"]:
-            for image in os.listdir(os.join(data_dir, label)):
-                image_dir = os.join(data_dir, label, image)
+            for image in os.listdir(os.path.join(data_dir, label)):
+                image_dir = os.path.join(data_dir, label, image)
                 pred = self.forward(model.predict(image_dir).tolist())
                 preds.append(pred)
                 true_labels.append(label)
