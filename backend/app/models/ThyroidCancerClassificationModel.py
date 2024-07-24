@@ -5,7 +5,7 @@ from backend.utils.visualize_metrics import Tool
 from backend.utils.image import get_importance_slice_images
 import cv2
 import numpy as np
-
+import wandb
 
 class ThyroidCancerClassificationModel:
     def __init__(self, model1_path=None, model2_path=None, model3_path=None):
