@@ -45,8 +45,10 @@ class App:
         self.cam.make_cam_images(self.images)
         self.cam_images = self.cam.cam_on_images(self.images, use_rgb=True)
 
-    def get_images(self):
+    def get_images(self, image_origin_dir=None):
         # Đọc ảnh gốc
+        if image_origin_dir is not None:
+            self.image_origin_dir = image_origin_dir
         self.origin_image = cv2.imread(self.image_origin_dir)
         if self.origin_image is None:
             print(f"Error reading image {self.image_origin_dir}")

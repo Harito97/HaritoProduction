@@ -24,8 +24,6 @@ def load_model1(model1_path):
         model1_path,
         # "/Data/Projects/HaritoProduction/backend/app/models/cell_cluster_detect_300_epoches_best.pt",
     )
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
     # model.eval() # Hien tai dong nay dang lam viec load vao bi loi va minh khong hieu tai sao
     return model
 
