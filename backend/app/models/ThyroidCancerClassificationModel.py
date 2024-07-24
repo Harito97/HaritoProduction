@@ -135,7 +135,8 @@ class ThyroidCancerClassificationModel:
         return output_model3
 
     def forward(self, image_origin_dir):
-        output_model1 = self.get_output_model1(image_origin_dir)
+        self.image_origin_dir = image_origin_dir
+        output_model1 = self.get_output_model1(self.image_origin_dir)
         output_model2 = self.get_output_model2(output_model1)
         output_model3 = self.get_output_model3(output_model2)
         _, predicted = torch.max(output_model3, 1)
