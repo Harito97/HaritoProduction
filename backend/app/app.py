@@ -14,7 +14,7 @@ class App:
         self.model2 = load_model2(model2_path)
         target_layers = self.model2.feature_extractor[-2]
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.cam = ClassActivationMaps(self.model2, target_layers)
+        self.cam = None, # ClassActivationMaps(self.model2, target_layers)
         self.image_origin_dir = None
         self.origin_image = None
 
