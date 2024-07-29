@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import UseApp from './pages/UseApp';
+// import UploadAndDisplayImage from './components/UploadImage/UploadImage';
 
 const App = () => {
   return (
@@ -11,6 +12,7 @@ const App = () => {
         <Route path="/" element={<HomePage />} />
       </Routes>
     </Router>
+    // <UploadAndDisplayImage />
   );
 }
 
