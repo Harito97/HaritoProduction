@@ -2,6 +2,12 @@ import React, { useState } from 'react';
 import { AppBar, Toolbar, Typography, Button, IconButton, Menu, MenuItem, useMediaQuery, useTheme } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useNavigate } from 'react-router-dom';
+import { styled } from '@mui/material/styles';
+
+const StyledAppBar = styled(AppBar)({
+  borderRadius: '10px', // Adjust the value to your desired roundness
+  overflow: 'hidden', // Ensure the background color extends to the corners
+});
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -32,7 +38,7 @@ const Navbar = () => {
   ];
 
   return (
-    <AppBar position="static">
+    <StyledAppBar position="static" color="primary">
       <Toolbar>
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} onClick={handleClick}>
           Thyroid Cancer Classifier
@@ -84,8 +90,7 @@ const Navbar = () => {
           </>
         )}
       </Toolbar>
-    </AppBar>
-  );
+    </StyledAppBar>);
 };
 
 export default Navbar;
