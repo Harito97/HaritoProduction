@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 from ultralytics import YOLO
 from backend.app.models.H97 import H97_EfficientNet, H97_ANN
 from backend.utils.visualize_metrics import Tool
@@ -16,6 +17,7 @@ from sklearn.metrics import (
 )
 from sklearn.preprocessing import label_binarize
 
+
 class ThyroidCancerClassificationModel:
     def __init__(self, model1_path=None, model2_path=None, model3_path=None):
         if model1_path is None:
@@ -32,6 +34,9 @@ class ThyroidCancerClassificationModel:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model1 = YOLO(model1_path)
         self.model2 = H97_EfficientNet()
+        self.target_layer = self.model2.feature_extractor[
+            -2
+        ]  # draw the CAM from the last layer of the feature extractor
         self.model2.load_state_dict(torch.load(model2_path, map_location=self.device))
         self.model2.eval()
         self.model3 = H97_ANN()
@@ -93,7 +98,7 @@ class ThyroidCancerClassificationModel:
         images.append(part10)
         images.append(part11)
 
-        importance_slice_images, self.bounding_boxes, self.yolo_detect_image = (
+        importance_slice_images, __bounding_boxes, self.yolo_detect_image = (
             get_importance_slice_images(self.model1, image_origin_dir)
         )
         for image in importance_slice_images:
@@ -103,7 +108,7 @@ class ThyroidCancerClassificationModel:
             images.append(image)
 
         images.append(
-            cv2.resize(self.origin_image, (224, 224)) / 255.0
+            cv2.resize(self.origin_image, (224, 224)) # / 255.0
         )  # sua lai co le khong nen chia 255 o day - nhung trc khi sua thi nen train lai voi H97_ANN voi input la anh goc chua chia 255
         return np.array(images)
 
@@ -112,19 +117,69 @@ class ThyroidCancerClassificationModel:
         print(type(output_model1), output_model1.shape, output_model1.dtype)
         return output_model1
 
-    def get_output_model2(self, images):
-        images_tensor = torch.tensor(images, dtype=torch.float32).permute(
-            0, 3, 1, 2
-        )  # (B, H, W, C) -> (B, C, H, W) & change from float64 to float32
 
-        # input of model2 is tensor of shape (batch_size, 3, 224, 224)
+    def get_output_model2(self, images):
+        images_tensor = torch.tensor(images, dtype=torch.float32).permute(0, 3, 1, 2)
+        images_tensor.requires_grad_()
+
+        cam_images = []
+        features = []
+
+        def hook_fn(module, input, output):
+            features.append(output)
+            # Ensure that the gradients are calculated for this layer
+            output.register_hook(lambda grad: features.append(grad))
+
+        hook = self.target_layer.register_forward_hook(hook_fn)
+
         output_model2 = self.model2(images_tensor)
 
-        # _, predicted = torch.max(output_model2, 1)
-        # return predicted
+        hook.remove()
 
+        # Calculate gradients w.r.t the output
+        self.model2.zero_grad()
+        output_model2.backward(gradient=torch.ones_like(output_model2))
+
+        # Get gradients and feature maps
+        feature_maps = features[0].detach()
+        gradients = features[1].detach()
+        print(type(gradients), gradients.shape, gradients.dtype)
+        print(feature_maps.shape, feature_maps.dtype)
+
+        # Ensure that gradients and feature_maps are available
+        if gradients is None or feature_maps is None:
+            raise ValueError("No gradients or feature maps were computed.")
+
+        # Calculate weights
+        num_channels = feature_maps.size(1)
+        weights = torch.mean(gradients, dim=[0, 2, 3])  # Mean across spatial dimensions
+        weights = weights.view(-1)  # Flatten to a 1D tensor
+        print(weights.shape, weights.dtype)
+
+         # Calculate CAM
+        H, W = feature_maps.size(2), feature_maps.size(3)
+        feature_maps_reshaped = feature_maps.reshape(18, num_channels, H * W)  # (num_channels, H*W)
+        cam = torch.matmul(weights, feature_maps_reshaped)  # (H*W)
+        cam = cam.view(feature_maps.size(2), feature_maps.size(3))  # (H, W)
+
+        # Apply ReLU
+        cam = F.relu(cam)
+
+        # Normalize CAM
+        cam -= torch.min(cam)
+        cam /= torch.max(cam)
+
+        # Resize CAM to match input image size
+        for i in range(cam.size(0)):  # Assuming batch dimension
+            cam_img = cam.unsqueeze(0).unsqueeze(0)  # (1, 1, H, W)
+            cam_img = F.interpolate(cam_img, size=images_tensor.shape[2:], mode='bilinear', align_corners=False)
+            cam_images.append(cam_img.squeeze().cpu().numpy())
+
+        # Print output information
         print(type(output_model2), output_model2.shape, output_model2.dtype)
-        return output_model2
+
+        return output_model2, cam_images
+
 
     def get_output_model3(self, output_model2):
         input_model3 = output_model2.view(
@@ -143,14 +198,62 @@ class ThyroidCancerClassificationModel:
 
     def forward(self, image_origin_dir):
         output_model1 = self.get_output_model1(image_origin_dir)
-        output_model2 = self.get_output_model2(output_model1)
+        output_model2, cam_images = self.get_output_model2(
+            output_model1
+        )
         output_model3 = self.get_output_model3(output_model2)
         _, predicted = torch.max(output_model3, 1)
-        return predicted, (output_model3, output_model2, output_model1)
+        # cam_images = self.get_CAM(output_model2, images_tensor_requires_grad, predicted)
+        return predicted, (output_model3, output_model2, output_model1), cam_images
 
-    def test_with_each_part(self, data_dir, name_dataset, print_image_dir_processing=False):
+    def run_app(self, image_origin_dir):
+        predicted, outputs, cam_images = self.forward(image_origin_dir)
+        # Ghép các phần lại với nhau
+        top_row = np.hstack(
+            (
+                cam_images[0],
+                cam_images[1],
+                cam_images[2],
+                cam_images[3],
+            )
+        )
+        middle_row = np.hstack(
+            (
+                cam_images[4],
+                cam_images[5],
+                cam_images[6],
+                cam_images[7],
+            )
+        )
+        bottom_row = np.hstack(
+            (
+                cam_images[8],
+                cam_images[9],
+                cam_images[10],
+                cam_images[11],
+            )
+        )
+        # Ghép các hàng lại với nhau để tạo thành ảnh tổng hợp
+        patch_level_heatmap = np.vstack((top_row, middle_row, bottom_row))
+        # Image level heatmap
+        image_level_heatmap = cam_images[17]
+        # YOLO detect image
+        yolo_detect_image = self.yolo_detect_image
+
+        return (
+            predicted,
+            outputs,
+            patch_level_heatmap,
+            image_level_heatmap,
+            yolo_detect_image,
+        )
+
+    def test_with_each_part(
+        self, data_dir, name_dataset, print_image_dir_processing=False
+    ):
         import matplotlib.pyplot as plt
         import matplotlib.image as mpimg
+
         wandb.init(
             project="ThyroidCancer",
             entity="harito",
@@ -163,7 +266,7 @@ class ThyroidCancerClassificationModel:
             for image in os.listdir(os.path.join(data_dir, label)):
                 image_dir = os.path.join(data_dir, label, image)
                 if print_image_dir_processing:
-                    print('Processing:', image_dir)
+                    print("Processing:", image_dir)
                 pred, prob = self.forward(image_dir)
                 pred = pred.tolist()
                 prob = prob[0].squeeze().tolist()
@@ -177,11 +280,9 @@ class ThyroidCancerClassificationModel:
 
         print(preds.shape, probs.shape, true_labels.shape)
         print(preds, probs, true_labels)
-        
+
         test_acc = np.mean(preds == true_labels)
-        test_f1 = f1_score(
-            true_labels, preds, average="weighted"
-        )
+        test_f1 = f1_score(true_labels, preds, average="weighted")
 
         # Save confusion matrix
         cm = Tool.save_confusion_matrix(
@@ -214,7 +315,9 @@ class ThyroidCancerClassificationModel:
                     else None
                 ),
                 "roc_auc_plot": (
-                    wandb.Image("roc_auc.png") if os.path.exists("roc_auc.png") else None
+                    wandb.Image("roc_auc.png")
+                    if os.path.exists("roc_auc.png")
+                    else None
                 ),
             }
         )
@@ -227,19 +330,19 @@ class ThyroidCancerClassificationModel:
         # Hiển thị các ảnh
         fig, axs = plt.subplots(1, 3, figsize=(15, 5))
         axs[0].imshow(mpimg.imread(cm_path))
-        axs[0].set_title('Confusion Matrix')
-        axs[0].axis('off')
+        axs[0].set_title("Confusion Matrix")
+        axs[0].axis("off")
 
         axs[1].imshow(mpimg.imread(cr_path))
-        axs[1].set_title('Classification Report')
-        axs[1].axis('off')
+        axs[1].set_title("Classification Report")
+        axs[1].axis("off")
 
         axs[2].imshow(mpimg.imread(roc_auc_path))
-        axs[2].set_title('ROC AUC Plot')
-        axs[2].axis('off')
+        axs[2].set_title("ROC AUC Plot")
+        axs[2].axis("off")
 
         plt.show()
-        
+
         print(f"Test accuracy: {test_acc}")
         print(f"Test F1 score: {test_f1}")
         print(f"Classification Report: {cr}")

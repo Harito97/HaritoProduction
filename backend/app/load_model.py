@@ -1,17 +1,3 @@
-# import sys
-# import os
-
-# # Đảm bảo rằng bạn đang ở thư mục gốc của dự án hoặc xác định đúng đường dẫn tuyệt đối
-# # Lấy đường dẫn thư mục hiện tại (thư mục chứa script)
-# current_dir = os.path.dirname(os.path.abspath(__file__))
-
-# # Lấy đường dẫn thư mục gốc của dự án (giả sử models nằm trong app)
-# project_root = os.path.abspath(os.path.join(current_dir, '..'))
-
-# # Thêm thư mục gốc của dự án vào sys.path
-# if project_root not in sys.path:
-#     sys.path.append(project_root)
-
 import torch
 from ultralytics import YOLO
 from backend.app.models.H97 import H97_EfficientNet

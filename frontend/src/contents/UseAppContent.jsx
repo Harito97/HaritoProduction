@@ -3,7 +3,10 @@ import { Typography, Button, Grid, Card, CardContent, CardActions, Container, Mo
 import { styled } from '@mui/system';
 import ChatBotBox from '../components/ChatBotBox/ChatBotBox';
 import VideoDemo from '../components/VideoPlayer/VideoPlayer';
-// import axios from 'axios';
+import PatchLevelImage from '../components/ImageProcessing/PatchLevelHeatMap';
+import ImageLevelImage from '../components/ImageProcessing/ImageLevelHeatMap';
+import ColumnFigure from '../components/ImageProcessing/ColumnFigure';
+import { uploadImage } from '../services/api';
 
 const StyledCard = styled(Card)({
     height: '100%',
@@ -34,16 +37,17 @@ const StyledModalImage = styled('img')({
     objectFit: 'contain',
 });
 
-
 const UseAppContent = () => {
     const [uploadedImage, setUploadedImage] = useState(null);
     const [modalOpen, setModalOpen] = useState(false);
+    const [modalImage, setModalImage] = useState(null);
 
     const handleUploadImage = (event) => {
         setUploadedImage(event.target.files[0]);
     };
 
-    const handleOpenModal = () => {
+    const handleOpenModal = (image) => {
+        setModalImage(image);
         setModalOpen(true);
     };
 
@@ -79,7 +83,6 @@ const UseAppContent = () => {
                             >
                                 Upload image
                                 <input type="file" hidden onChange={handleUploadImage} />
-                                {/* <input type="file" style={{ display: 'none' }} /> */}
                             </Button>
                         </CardActions>
                     </StyledCard>
@@ -89,7 +92,11 @@ const UseAppContent = () => {
                 <Grid item xs={12} sm={6} md={3} key="patch-level">
                     <StyledCard>
                         <CardContent>
-                            <StyledImage src={`${process.env.PUBLIC_URL}/upload_img.jpg`} alt="Patch Level" />
+                            <StyledImage
+                                src={`${process.env.PUBLIC_URL}/upload_img.jpg`}
+                                alt="Patch Level"
+                                onClick={() => handleOpenModal(`${process.env.PUBLIC_URL}/upload_img.jpg`)}
+                            />
                             <Typography variant="body2" color="text.secondary">
                                 Patch level
                             </Typography>
@@ -99,7 +106,7 @@ const UseAppContent = () => {
                                 size="small"
                                 variant="contained"
                                 color="primary"
-                                onClick={handleOpenModal}
+                                onClick={() => handleOpenModal(`${process.env.PUBLIC_URL}/upload_img.jpg`)}
                             >
                                 See detail
                             </Button>
@@ -111,7 +118,11 @@ const UseAppContent = () => {
                 <Grid item xs={12} sm={6} md={3} key="plot">
                     <StyledCard>
                         <CardContent>
-                            <StyledImage src={`${process.env.PUBLIC_URL}/upload_img.jpg`} alt="Plot" />
+                            <StyledImage
+                                src={`${process.env.PUBLIC_URL}/upload_img.jpg`}
+                                alt="Plot"
+                                onClick={() => handleOpenModal(`${process.env.PUBLIC_URL}/upload_img.jpg`)}
+                            />
                             <Typography variant="body2" color="text.secondary">
                                 Plot
                             </Typography>
@@ -121,7 +132,7 @@ const UseAppContent = () => {
                                 size="small"
                                 variant="contained"
                                 color="primary"
-                                onClick={handleOpenModal}
+                                onClick={() => handleOpenModal(`${process.env.PUBLIC_URL}/upload_img.jpg`)}
                             >
                                 See detail
                             </Button>
@@ -133,7 +144,11 @@ const UseAppContent = () => {
                 <Grid item xs={12} sm={6} md={3} key="image-level">
                     <StyledCard>
                         <CardContent>
-                            <StyledImage src={`${process.env.PUBLIC_URL}/upload_img.jpg`} alt="Image Level" />
+                            <StyledImage
+                                src={`${process.env.PUBLIC_URL}/upload_img.jpg`}
+                                alt="Image Level"
+                                onClick={() => handleOpenModal(`${process.env.PUBLIC_URL}/upload_img.jpg`)}
+                            />
                             <Typography variant="body2" color="text.secondary">
                                 Image level
                             </Typography>
@@ -143,7 +158,7 @@ const UseAppContent = () => {
                                 size="small"
                                 variant="contained"
                                 color="primary"
-                                onClick={handleOpenModal}
+                                onClick={() => handleOpenModal(`${process.env.PUBLIC_URL}/upload_img.jpg`)}
                             >
                                 See detail
                             </Button>
@@ -179,9 +194,9 @@ const UseAppContent = () => {
                         alignItems: 'center',
                     }}
                 >
-                    {uploadedImage && (
+                    {modalImage && (
                         <StyledModalImage
-                            src={URL.createObjectURL(uploadedImage)}
+                            src={modalImage}
                             alt="Uploaded Image"
                         />
                     )}
@@ -189,6 +204,6 @@ const UseAppContent = () => {
             </Modal>
         </Container>
     );
-}
+};
 
 export default UseAppContent;
