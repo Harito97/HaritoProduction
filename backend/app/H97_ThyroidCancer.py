@@ -17,7 +17,30 @@ from sklearn.metrics import (
 )
 from sklearn.preprocessing import label_binarize
 import matplotlib.pyplot as plt
+from PIL import Image
+import base64
+from io import BytesIO
 
+
+def tensor_to_list(tensor):
+    return tensor.cpu().detach().numpy().tolist()
+
+def numpy_array_to_base64(numpy_array):
+    # Ensure the numpy array is in an acceptable format for conversion
+    if not isinstance(numpy_array, np.ndarray):
+        raise ValueError("Input must be a numpy array")
+    
+    # Convert numpy array to PIL image
+    image = Image.fromarray(numpy_array)
+
+    # Convert PIL image to bytes
+    buffered = BytesIO()
+    image.save(buffered, format="PNG")
+    img_bytes = buffered.getvalue()
+
+    # Encode bytes to base64
+    img_base64 = base64.b64encode(img_bytes).decode("utf-8")
+    return img_base64
 
 class H97_ThyroidCancer:
     def __init__(self, model1_path=None, model2_path=None, model3_path=None):

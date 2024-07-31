@@ -5,7 +5,7 @@ export const uploadImage = (formData) => {
   return axios.post('http://localhost:8000/api/post-upload-thyroid-cancer-image', formData);
 };
 
-export const getColumnFigureData = () => {
-  return axios.get('/api/get-column-figure-data');
+export const chatResponse = (formData) => {
+  return axios.post('http://localhost:8000/api/chat-response', formData);
 };
 

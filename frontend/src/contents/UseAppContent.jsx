@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useEffect } from 'react';
 import { Typography, Button, Grid, Card, CardContent, CardActions, Container, Modal, Box } from '@mui/material';
 import { styled } from '@mui/system';
-import { uploadImage } from '../services/api'; // Đảm bảo bạn đã định nghĩa uploadImage trong api.js
+import { uploadImage } from '../services/api'; // định nghĩa uploadImage trong api.js
 import ColumnChart from '../components/Chart/ColumnChart';
 import ChatBotBox from '../components/ChatBotBox/ChatBotBox';
 import VideoDemo from '../components/VideoPlayer/VideoPlayer';
@@ -37,6 +37,11 @@ const StyledModalImage = styled('img')({
 });
 
 const UseAppContent = () => {
+    const labelMapping = {
+        1: 'B2',
+        2: 'B5',
+        3: 'B6'
+    };
     const [uploadedImage, setUploadedImage] = useState(null);
     const [patchLevelHeatmap, setPatchLevelHeatmap] = useState(null);
     const [imageLevelHeatmap, setImageLevelHeatmap] = useState(null);
@@ -67,7 +72,7 @@ const UseAppContent = () => {
 
             // Process output_model3
             const processedOutputModel3 = response.data.output_model3[0].map((probability, index) => ({
-                label: `Label ${index + 1}`,
+                label: labelMapping[index + 1] || `Label ${index + 1}`,
                 value: probability,
             }));
             setOutputModel3(processedOutputModel3); // Save processed output_model3
@@ -166,7 +171,7 @@ const UseAppContent = () => {
                         </CardContent>
                     </StyledCard>
                 </Grid>
-                
+
                 <Grid item xs={12} sm={6} md={3} key="output-model">
                     <StyledCard>
                         <CardContent>
