@@ -1,12 +1,11 @@
 import { useState } from 'react';
+import { useEffect } from 'react';
 import { Typography, Button, Grid, Card, CardContent, CardActions, Container, Modal, Box } from '@mui/material';
 import { styled } from '@mui/system';
+import { uploadImage } from '../services/api'; // Đảm bảo bạn đã định nghĩa uploadImage trong api.js
+import ColumnChart from '../components/Chart/ColumnChart';
 import ChatBotBox from '../components/ChatBotBox/ChatBotBox';
 import VideoDemo from '../components/VideoPlayer/VideoPlayer';
-import PatchLevelImage from '../components/ImageProcessing/PatchLevelHeatMap';
-import ImageLevelImage from '../components/ImageProcessing/ImageLevelHeatMap';
-import ColumnFigure from '../components/ImageProcessing/ColumnFigure';
-import { uploadImage } from '../services/api';
 
 const StyledCard = styled(Card)({
     height: '100%',
@@ -39,11 +38,42 @@ const StyledModalImage = styled('img')({
 
 const UseAppContent = () => {
     const [uploadedImage, setUploadedImage] = useState(null);
+    const [patchLevelHeatmap, setPatchLevelHeatmap] = useState(null);
+    const [imageLevelHeatmap, setImageLevelHeatmap] = useState(null);
+    const [yoloDetectImage, setYoloDetectImage] = useState(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [modalImage, setModalImage] = useState(null);
+    const [outputModel3, setOutputModel3] = useState(null);
+    useEffect(() => {
+        console.log("Updated outputModel3:", outputModel3);
+    }, [outputModel3]);
 
-    const handleUploadImage = (event) => {
-        setUploadedImage(event.target.files[0]);
+    const handleUploadImage = async (event) => {
+        const file = event.target.files[0];
+        setUploadedImage(file);
+
+        // Upload image and get results
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const response = await uploadImage(formData);
+            console.log(response.data); // Log API response for debugging
+
+            // Update state with response data
+            setPatchLevelHeatmap(`data:image/png;base64,${response.data.patch_level_heatmap}`);
+            setImageLevelHeatmap(`data:image/png;base64,${response.data.image_level_heatmap}`);
+            setYoloDetectImage(`data:image/png;base64,${response.data.yolo_detect_image}`);
+
+            // Process output_model3
+            const processedOutputModel3 = response.data.output_model3[0].map((probability, index) => ({
+                label: `Label ${index + 1}`,
+                value: probability,
+            }));
+            setOutputModel3(processedOutputModel3); // Save processed output_model3
+        } catch (error) {
+            console.error("Error uploading image:", error);
+        }
     };
 
     const handleOpenModal = (image) => {
@@ -62,14 +92,13 @@ const UseAppContent = () => {
                 <Grid item xs={12} sm={6} md={3} key="upload-image">
                     <StyledCard>
                         <CardContent>
-                            <StyledImage
-                                src={
-                                    uploadedImage
-                                        ? URL.createObjectURL(uploadedImage)
-                                        : `${process.env.PUBLIC_URL}/upload_img.jpg`
-                                }
-                                alt="Uploaded Image"
-                            />
+                            {uploadedImage && (
+                                <StyledImage
+                                    src={URL.createObjectURL(uploadedImage)}
+                                    alt="Uploaded Image"
+                                    onClick={() => handleOpenModal(URL.createObjectURL(uploadedImage))}
+                                />
+                            )}
                             <Typography variant="body2" color="text.secondary">
                                 Upload image
                             </Typography>
@@ -92,51 +121,24 @@ const UseAppContent = () => {
                 <Grid item xs={12} sm={6} md={3} key="patch-level">
                     <StyledCard>
                         <CardContent>
-                            <StyledImage
-                                src={`${process.env.PUBLIC_URL}/upload_img.jpg`}
-                                alt="Patch Level"
-                                onClick={() => handleOpenModal(`${process.env.PUBLIC_URL}/upload_img.jpg`)}
-                            />
+                            {patchLevelHeatmap && (
+                                <StyledImage
+                                    src={patchLevelHeatmap}
+                                    alt="Patch Level"
+                                    onClick={() => handleOpenModal(patchLevelHeatmap)}
+                                />
+                            )}
+                            {yoloDetectImage && (
+                                <StyledImage
+                                    src={yoloDetectImage}
+                                    alt="YOLO Detection"
+                                    onClick={() => handleOpenModal(yoloDetectImage)}
+                                />
+                            )}
                             <Typography variant="body2" color="text.secondary">
                                 Patch level
                             </Typography>
                         </CardContent>
-                        <CardActions sx={{ justifyContent: 'center' }}>
-                            <Button
-                                size="small"
-                                variant="contained"
-                                color="primary"
-                                onClick={() => handleOpenModal(`${process.env.PUBLIC_URL}/upload_img.jpg`)}
-                            >
-                                See detail
-                            </Button>
-                        </CardActions>
-                    </StyledCard>
-                </Grid>
-
-                {/* Plot */}
-                <Grid item xs={12} sm={6} md={3} key="plot">
-                    <StyledCard>
-                        <CardContent>
-                            <StyledImage
-                                src={`${process.env.PUBLIC_URL}/upload_img.jpg`}
-                                alt="Plot"
-                                onClick={() => handleOpenModal(`${process.env.PUBLIC_URL}/upload_img.jpg`)}
-                            />
-                            <Typography variant="body2" color="text.secondary">
-                                Plot
-                            </Typography>
-                        </CardContent>
-                        <CardActions sx={{ justifyContent: 'center' }}>
-                            <Button
-                                size="small"
-                                variant="contained"
-                                color="primary"
-                                onClick={() => handleOpenModal(`${process.env.PUBLIC_URL}/upload_img.jpg`)}
-                            >
-                                See detail
-                            </Button>
-                        </CardActions>
                     </StyledCard>
                 </Grid>
 
@@ -144,27 +146,44 @@ const UseAppContent = () => {
                 <Grid item xs={12} sm={6} md={3} key="image-level">
                     <StyledCard>
                         <CardContent>
-                            <StyledImage
-                                src={`${process.env.PUBLIC_URL}/upload_img.jpg`}
-                                alt="Image Level"
-                                onClick={() => handleOpenModal(`${process.env.PUBLIC_URL}/upload_img.jpg`)}
-                            />
+                            {imageLevelHeatmap && (
+                                <StyledImage
+                                    src={imageLevelHeatmap}
+                                    alt="Image Level Heatmap"
+                                    onClick={() => handleOpenModal(imageLevelHeatmap)}
+                                />
+                            )}
+                            {yoloDetectImage && (
+                                <StyledImage
+                                    src={yoloDetectImage}
+                                    alt="YOLO Detection"
+                                    onClick={() => handleOpenModal(yoloDetectImage)}
+                                />
+                            )}
                             <Typography variant="body2" color="text.secondary">
                                 Image level
                             </Typography>
                         </CardContent>
-                        <CardActions sx={{ justifyContent: 'center' }}>
-                            <Button
-                                size="small"
-                                variant="contained"
-                                color="primary"
-                                onClick={() => handleOpenModal(`${process.env.PUBLIC_URL}/upload_img.jpg`)}
-                            >
-                                See detail
-                            </Button>
-                        </CardActions>
                     </StyledCard>
                 </Grid>
+                
+                <Grid item xs={12} sm={6} md={3} key="output-model">
+                    <StyledCard>
+                        <CardContent>
+                            {Array.isArray(outputModel3) && outputModel3.length > 0 ? (
+                                <ColumnChart data={outputModel3} />
+                            ) : (
+                                <Typography variant="body2" color="text.secondary">
+                                    No data available
+                                </Typography>
+                            )}
+                            <Typography variant="body2" color="text.secondary">
+                                Output Model 3
+                            </Typography>
+                        </CardContent>
+                    </StyledCard>
+                </Grid>
+
             </Grid>
 
             {/* a chat bot box */}
@@ -172,7 +191,7 @@ const UseAppContent = () => {
             {/* a area to show the video demo */}
             <VideoDemo />
 
-            {/* Modal for displaying the uploaded image */}
+            {/* Modal for displaying images */}
             <Modal
                 open={modalOpen}
                 onClose={handleCloseModal}
@@ -207,3 +226,5 @@ const UseAppContent = () => {
 };
 
 export default UseAppContent;
+
+
